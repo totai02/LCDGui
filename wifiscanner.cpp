@@ -1,11 +1,7 @@
 #include "wifiscanner.h"
 
-WifiScanner::WifiScanner()
-{
-}
-
 void split(std::string const &str, const char delim,
-            std::vector<std::string> &out)
+           std::vector<std::string> &out)
 {
     size_t start;
     size_t end = 0;
@@ -45,6 +41,10 @@ string exec(const char* cmd) {
     return result;
 }
 
+WifiScanner::WifiScanner()
+{
+}
+
 vector<WifiAP> WifiScanner::scan()
 {
     vector<WifiAP> apList;
@@ -75,14 +75,25 @@ vector<WifiAP> WifiScanner::scan()
 
 int WifiScanner::connect(string ssid, string pwd)
 {
-    string cmd = "nmcli device wifi connect '" + ssid + "' password '" + pwd + "'";
-    string response = exec(cmd.c_str());
-    if (response.substr(0, 5).compare("Error") == 0)
+    ofstream output;
+    output.open("/etc/wpa_supplicant/wpa_supplicant.conf");
+    output << "ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev" << endl;
+    output << "update_config=1" << endl;
+    output << "country=GB" << endl << endl;
+    output << "network={" << endl;
+    output << "     ssid=\"" << ssid << "\"" << endl;
+    output << "     psk=\"" << pwd << "\"" << endl;
+    output << "     key_mgmt=WPA-PSK" << endl;
+    output << "}" << endl;
+
+    string response = exec("wpa_cli -i wlan0 reconfigure");
+
+    if (response.substr(0, 2).compare("OK") == 0)
     {
-        return -1;
+        return 0;
     }
     else
     {
-        return 0;
+        return -1;
     }
 }

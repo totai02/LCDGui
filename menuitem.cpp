@@ -39,7 +39,7 @@ void MenuItem::draw(int x, int y, bool hover)
         if (content == "")
         {
             LCDsetTextColor(WHITE);
-            LCDdrawstring_P(x + 3, y, title.substr(windowPos, min(title.size(), windowPos + 13)).c_str());
+            LCDdrawstring_P(x + 3, y, title.substr(windowPos, min(title.size() - windowPos, 13)).c_str());
             if (title.size() > 13)
             {
                 if (delayTime) delayTime--;
@@ -55,7 +55,7 @@ void MenuItem::draw(int x, int y, bool hover)
             string cutTitle = title.substr(0, 7) + ":";
             LCDsetTextColor(WHITE);
             LCDdrawstring_P(x + 3, y, cutTitle.c_str());
-            LCDdrawstring_P(x + 3 + cutTitle.size() * 6, y, content.substr(windowPos, min(content.size(), windowPos + 14 - cutTitle.size())).c_str());
+            LCDdrawstring_P(x + 3 + cutTitle.size() * 6, y, content.substr(windowPos, min(content.size() - windowPos, 14 - cutTitle.size())).c_str());
             if (content.size() > 13 - cutTitle.size())
             {
                 if (delayTime) delayTime--;

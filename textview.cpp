@@ -25,7 +25,7 @@ void TextView::open()
         if (digitalRead (BTN1) == LOW && digitalRead (BTN4) == LOW)
         {
             int start = milisecond();
-            while (digitalRead (BTN1) == LOW && digitalRead (BTN4) == LOW && milisecond() - start < 1000);
+            while (digitalRead (BTN1) == LOW && digitalRead (BTN4) == LOW && milisecond() - start < 1000) delay(50);
             if (milisecond() - start >= 1000)
             {
                 exit();

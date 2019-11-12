@@ -9,9 +9,6 @@
 
 using namespace std;
 
-extern void split(string const &str, const char delim, vector<string> &out);
-extern string trim(const string& str);
-
 class Dialog
 {
 public:

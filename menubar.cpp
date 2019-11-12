@@ -132,8 +132,8 @@ int MenuBar::showDialog(string title, string message, int flag, int duration)
     else if (flag == OPENFILE_DIALOG)
     {
         dialog.clearButton();
-        dialog.addButton(new Button("", 0, 0, OPEN, OPEN_HOVER));
         dialog.addButton(new Button("", 0, 0, RUN, RUN_HOVER));
+        dialog.addButton(new Button("", 0, 0, OPEN, OPEN_HOVER));
     }
     else if (flag == ACCEPT_DIALOG)
     {
@@ -143,4 +143,15 @@ int MenuBar::showDialog(string title, string message, int flag, int duration)
     int status = dialog.show(title, message, duration);
     if (flag != MESSAGE_DIALOG) update();
     return status;
+}
+
+int MenuBar::showDialog(string title, int value, function<void(int)> cb, int step)
+{
+    editDialog.onEdit(cb);
+    return editDialog.show(title, value, step);
+}
+
+int MenuBar::showDialog(string title, int value, vector<string> labels)
+{
+    return editDialog.show(title, value, labels);
 }

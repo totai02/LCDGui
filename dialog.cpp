@@ -1,5 +1,10 @@
 #include "dialog.h"
 
+extern void split(std::string const &str, const char delim,
+            std::vector<std::string> &out);
+
+extern string trim(const string& str);
+
 Dialog::Dialog()
 {
     this->title = "Dialog";

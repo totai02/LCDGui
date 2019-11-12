@@ -25,28 +25,32 @@ using namespace std;
 
 MenuBar menuBar("Main Menu");
 WifiScanner scanner;
-
-bool light = false;
-MenuItem setting3("Light: ON");
+bool light = true;
+int contrast = 45;
 
 void initPin();
 void showKeyboard();
-void changeLight();
+void changeLight(MenuItem *setting3);
 void showLogo();
 int createFileList(MenuItem *menuItem, string path);
 int milisecond();
+void getIP(MenuItem *setting4);
 void shutdownOptions();
-void cpuShow(MenuItem &menu);
-
+void startFruitPicker(int angle, int duration, int ballColor, int offsetX, int offsetY, int v1, int v2, int stadium);
 extern string exec(const char* cmd);
+void runProgram(string filename, string path, string param = "");
 
 bool runProgramMode = false;
 string prog_name;
 
 int main()
 {
+    cout << "SmartLibary is running..." << endl;
+    cout << "Press [CTRL+C] to exit." << endl;
+
     wiringPiSetup();
     LCDInit();
+    LCDsetContrast(contrast);
     initPin();
 
     LCDclear();
@@ -54,25 +58,21 @@ int main()
     LCDdisplay();
     delay(2000);
 
-    MenuItem prog("Program");
+    MenuItem prog("Programs");
     MenuItem file("File Explorer");
     MenuItem sys("System");
-    MenuItem cpu("CPU Show");
     MenuItem power("Power");
 
-    MenuItem prog1("Detect Ball");
+    MenuItem prog1("Smart Library");
     MenuItem prog2("Show Keyboard");
-    MenuItem prog3("Calculator");
-    MenuItem prog4("Show Logo");
 
     MenuItem setting1("LCD Contrast");
     MenuItem setting2("Wi-Fi");
+    MenuItem setting3("Light: ON");
     MenuItem setting4("Get IP");
 
     prog.addItem(&prog1);
     prog.addItem(&prog2);
-    prog.addItem(&prog3);
-    prog.addItem(&prog4);
 
     sys.addItem(&setting1);
     sys.addItem(&setting2);
@@ -82,14 +82,17 @@ int main()
     menuBar.addItem(&prog);
     menuBar.addItem(&file);
     menuBar.addItem(&sys);
-    menuBar.addItem(&cpu);
     menuBar.addItem(&power);
 
     prog2.setAction(showKeyboard);
-    prog4.setAction(showLogo);
-    setting3.setAction(changeLight);
     power.setAction(shutdownOptions);
 
+    setting1.setAction([&setting1](){
+        contrast = menuBar.showDialog("Contrast", contrast, [](int value){
+            LCDsetContrast(value);
+        });
+        LCDsetContrast(contrast);
+    });
     setting2.setAction([&setting2](){
         menuBar.waitScreen();
         vector<WifiAP> apList = scanner.scan();
@@ -108,7 +111,7 @@ int main()
                 {
                     menuBar.waitScreen();
                     int error = scanner.connect(ssid, password);
-                    if (error == 0) menuBar.showDialog("Wi-Fi", "Connect Success");
+                    if (!error) menuBar.showDialog("Wi-Fi", "Connect Success");
                     else menuBar.showDialog("Wi-Fi", "Connect Failed");
                 }
             });
@@ -116,41 +119,14 @@ int main()
         }
         menuBar.enter();
     });
-
-    setting4.setAction([&setting4](){
-        struct ifaddrs * ifAddrStruct=NULL;
-        struct ifaddrs * ifa=NULL;
-        void * tmpAddrPtr=NULL;
-
-        getifaddrs(&ifAddrStruct);
-
-        for (ifa = ifAddrStruct; ifa != NULL; ifa = ifa->ifa_next) {
-            if (!ifa->ifa_addr) {
-                continue;
-            }
-            if (ifa->ifa_addr->sa_family == AF_INET) {
-                tmpAddrPtr=&((struct sockaddr_in *)ifa->ifa_addr)->sin_addr;
-                char addressBuffer[INET_ADDRSTRLEN];
-                inet_ntop(AF_INET, tmpAddrPtr, addressBuffer, INET_ADDRSTRLEN);
-                MenuItem *item = new MenuItem(string(ifa->ifa_name), string(addressBuffer));
-                setting4.addItem(item);
-            }
-        }
-        if (ifAddrStruct!=NULL) freeifaddrs(ifAddrStruct);
-        menuBar.enter();
-    });
-
-    cpu.setAction([&cpu](){
-        cpuShow(cpu);
-    });
+    setting3.setAction(bind(changeLight, &setting3));
+    setting4.setAction(bind(getIP, &setting4));
 
     createFileList(&file, "/home/pi");
+    changeLight(&setting3);
 
     int timer = milisecond();
     int deltaTime = 0;
-
-    changeLight();
-
     while (true)
     {
         if (!runProgramMode)
@@ -189,22 +165,69 @@ int main()
         }
         else
         {
-            if (digitalRead (BTN1) == LOW && digitalRead (BTN4) == LOW)
+            if (digitalRead (BTN1) == LOW)
             {
                 int start = milisecond();
-                while (digitalRead (BTN1) == LOW && digitalRead (BTN4) == LOW && milisecond() - start < 2000);
+                while ((digitalRead (BTN1) == LOW) && (milisecond() - start < 2000))
+                {
+                    delay(50);
+                }
                 if (milisecond() - start >= 2000)
                 {
                     system(("sudo killall " + prog_name).c_str());
                     menuBar.update();
                     runProgramMode = false;
-                    while (digitalRead (BTN1) == LOW);
+                    while (digitalRead (BTN1) == LOW) delay(50);
                     delay(250);
                 }
             }
         }
+        delay(50);
     }
     return 0;
+}
+
+void runProgram(string filename, string path, string param)
+{
+    menuBar.showDialog("Program ", filename + " is running.");
+    string cmd = "lxterminal -e sudo " + path + " " + param + " &";
+    system(cmd.c_str());
+    prog_name = filename;
+    runProgramMode = true;
+}
+
+void startFruitPicker(int angle, int duration, int ballColor, int offsetX, int offsetY, int v1, int v2, int stadium)
+{
+    string param = to_string(angle) + " " + to_string(duration) + " " + to_string(ballColor) + " " + to_string(offsetX) + " " + to_string(offsetY) + " " + to_string(v1) + " " + to_string(v2) + " " + to_string(stadium);
+    string cmd = "sudo /home/pi/build-FruitPicker-Desktop-Debug/FruitPicker " + param;
+
+    menuBar.showDialog("Program", "FruitPicker is running.");
+    exec(cmd.c_str());
+    menuBar.update();
+}
+
+void getIP(MenuItem *setting4)
+{
+    struct ifaddrs * ifAddrStruct=NULL;
+    struct ifaddrs * ifa=NULL;
+    void * tmpAddrPtr=NULL;
+
+    getifaddrs(&ifAddrStruct);
+
+    for (ifa = ifAddrStruct; ifa != NULL; ifa = ifa->ifa_next) {
+        if (!ifa->ifa_addr) {
+            continue;
+        }
+        if (ifa->ifa_addr->sa_family == AF_INET) {
+            tmpAddrPtr=&((struct sockaddr_in *)ifa->ifa_addr)->sin_addr;
+            char addressBuffer[INET_ADDRSTRLEN];
+            inet_ntop(AF_INET, tmpAddrPtr, addressBuffer, INET_ADDRSTRLEN);
+            MenuItem *item = new MenuItem(string(ifa->ifa_name), string(addressBuffer));
+            setting4->addItem(item);
+        }
+    }
+    if (ifAddrStruct!=NULL) freeifaddrs(ifAddrStruct);
+    menuBar.enter();
 }
 
 void initPin()
@@ -224,55 +247,23 @@ void initPin()
     pinMode (BL, OUTPUT);
 }
 
-string Get_Cpu_Temperature(void)
-{
-    string temp_str = exec("cat /sys/class/thermal/thermal_zone0/temp");
-    return temp_str.substr(0, 2);
-}
-
-void cpuShow(MenuItem &menu)
-{
-    struct sysinfo sys_info;
-
-    sysinfo(&sys_info);
-
-    // uptime
-    char uptimeInfo[15];
-    unsigned long uptime = sys_info.uptime / 60;
-    sprintf(uptimeInfo, "%ld min", uptime);
-
-    // cpu info
-    char cpuInfo[10];
-    unsigned long avgCpuLoad = sys_info.loads[0] / 1000;
-    sprintf(cpuInfo, "%ld%%", avgCpuLoad);
-
-    // ram info
-    char ramInfo[10];
-    unsigned long totalRam = sys_info.freeram / 1024 / 1024;
-    sprintf(ramInfo, "%ld MB", totalRam);
-
-    menu.addItem(new MenuItem("Uptime", string(uptimeInfo)));
-    menu.addItem(new MenuItem("CPU", string(cpuInfo)));
-    menu.addItem(new MenuItem("RAM", string(ramInfo)));
-    menu.addItem(new MenuItem("Temp", Get_Cpu_Temperature()));
-    menuBar.enter();
-}
-
-
 void showKeyboard()
 {
     string text = menuBar.keyboard();
-    LCDsetTinyFont(false);
-    LCDdrawstring_P(0, 0, text.c_str());
-    LCDdisplay();
-    delay(2000);
+    if (text.compare("") != 0)
+    {
+        LCDsetTinyFont(false);
+        LCDdrawstring_P(0, 0, text.c_str());
+        LCDdisplay();
+        delay(2000);
+    }
 }
 
-void changeLight()
+void changeLight(MenuItem *setting3)
 {
     light = !light;
-    if (light) setting3.setTitle("Light: On");
-    else setting3.setTitle("Light: OFF");
+    if (!light) setting3->setTitle("Light: On");
+    else setting3->setTitle("Light: OFF");
     menuBar.update();
     digitalWrite(BL, light);
 }
@@ -336,10 +327,7 @@ int createFileList(MenuItem *menuItem, string path)
             int btn = menuBar.showDialog("Open file", "Choose action", OPENFILE_DIALOG);
             if (btn == RUN)
             {
-                menuBar.showDialog("Program ", entry.path().filename().string() + " is running.");
-                exec(("nohup sudo " + entry.path().string() + " > /dev/null 2>&1 &").c_str());
-                prog_name = entry.path().filename().string();
-                runProgramMode = true;
+                runProgram(entry.path().filename().string(), entry.path().string());
             }
             else if (btn == OPEN)
             {

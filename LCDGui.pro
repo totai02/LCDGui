@@ -8,20 +8,24 @@ SOURCES += main.cpp \
     menubar.cpp \
     button.cpp \
     keyboard.cpp \
-    wifiscanner.cpp \
     imagemenuitem.cpp \
     dialog.cpp \
-    textview.cpp
+    textview.cpp \
+    editdialog.cpp \
+    numbermenuitem.cpp \
+    wifiscanner.cpp
 
-LIBS += -lpcd8544 -lwiringPi -lstdc++fs -O3 -liw
+LIBS += -lpcd8544 -lwiringPi -lstdc++fs
 
 HEADERS += \
     menuitem.h \
     menubar.h \
     button.h \
     keyboard.h \
-    wifiscanner.h \
     imagemenuitem.h \
     dialog.h \
     define.h \
-    textview.h
+    textview.h \
+    editdialog.h \
+    numbermenuitem.h \
+    wifiscanner.h
