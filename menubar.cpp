@@ -59,6 +59,7 @@ void MenuBar::back()
 {
     if (currentMenu->parent != nullptr)
     {
+        currentMenu->exit();
         currentMenu = currentMenu->parent;
         cursorPos = 0;
         windowPos = 0;

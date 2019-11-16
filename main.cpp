@@ -45,7 +45,7 @@ string prog_name;
 
 int main()
 {
-    cout << "SmartLibary is running..." << endl;
+    cout << "LCDGui is running..." << endl;
     cout << "Press [CTRL+C] to exit." << endl;
 
     wiringPiSetup();
@@ -119,8 +119,14 @@ int main()
         }
         menuBar.enter();
     });
+    setting2.setExitAction([&setting2](){
+       setting2.clearItem();
+    });
     setting3.setAction(bind(changeLight, &setting3));
     setting4.setAction(bind(getIP, &setting4));
+    setting4.setExitAction([&setting4](){
+        setting4.clearItem();
+    });
 
     createFileList(&file, "/home/pi");
     changeLight(&setting3);

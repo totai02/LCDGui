@@ -17,6 +17,11 @@ void MenuItem::addItem(MenuItem *item)
     item->parent = this;
 }
 
+void MenuItem::clearItem()
+{
+    items.clear();
+}
+
 vector<MenuItem *> MenuItem::getItems() const
 {
     return items;
@@ -86,7 +91,17 @@ void MenuItem::select()
     callback();
 }
 
+void MenuItem::exit()
+{
+    exitCb();
+}
+
 void MenuItem::setAction(function<void()> cb)
 {
     callback = cb;
+}
+
+void MenuItem::setExitAction(function<void ()> cb)
+{
+    exitCb = cb;
 }
