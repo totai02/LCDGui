@@ -1,4 +1,5 @@
 #include "wifiscanner.h"
+#include <algorithm>
 
 void split(std::string const &str, const char delim,
            std::vector<std::string> &out)
@@ -41,6 +42,11 @@ string exec(const char* cmd) {
     return result;
 }
 
+bool compareWifiAP(WifiAP w1, WifiAP w2)
+{
+    return w1.quality >= w2.quality;
+}
+
 WifiScanner::WifiScanner()
 {
 }
@@ -70,6 +76,7 @@ vector<WifiAP> WifiScanner::scan()
             apList.push_back(ap);
         }
     }
+    sort(apList.begin(), apList.end(), compareWifiAP);
     return apList;
 }
 

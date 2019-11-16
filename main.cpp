@@ -30,6 +30,7 @@ int contrast = 45;
 
 void initPin();
 void showKeyboard();
+void runSmartLibrary();
 void changeLight(MenuItem *setting3);
 void showLogo();
 int createFileList(MenuItem *menuItem, string path);
@@ -84,10 +85,11 @@ int main()
     menuBar.addItem(&sys);
     menuBar.addItem(&power);
 
+    prog1.setAction(runSmartLibrary);
     prog2.setAction(showKeyboard);
     power.setAction(shutdownOptions);
 
-    setting1.setAction([&setting1](){
+    setting1.setAction([](){
         contrast = menuBar.showDialog("Contrast", contrast, [](int value){
             LCDsetContrast(value);
         });
@@ -191,6 +193,11 @@ int main()
         delay(50);
     }
     return 0;
+}
+
+void runSmartLibrary()
+{
+    runProgram("Smart Library", "/home/pi/build-SmartLibrary-Desktop-Debug/SmartLibrary", "");
 }
 
 void runProgram(string filename, string path, string param)
